@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<base href="/kuma-rhythm/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="description" content="ノれないクマはただのクマだ">
+<meta property="og:type" content="website">
+<meta property="og:title" content="クマリズム">
+<meta property="og:description" content="ノれないクマはただのクマだ">
+<meta property="og:url" content="https://takaminekumason.github.io/kuma-rhythm/">
+<meta property="og:image" content="https://takaminekumason.github.io/kuma-rhythm/img/ekkuma.png">
+<meta name="twitter:card" content="summary">
+<title>クマリズム（テスト）</title>
+<link rel="icon" type="image/png" href="img/ekkuma.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;800&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #1b1430;
+    color: #f3ecff;
+    font-family: "M PLUS Rounded 1c", "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    overflow: hidden;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+  canvas { position: fixed; inset: 0; display: block; }
+  img.px { image-rendering: pixelated; image-rendering: crisp-edges; }
+  .panel {
+    position: fixed; inset: 0;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 24px 16px;
+    background: rgba(20,14,36,.92);
+    text-align: center;
+  }
+  .panel.show { display: flex; }
+  .panel h1 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: 2px; color: #ffd76a; text-shadow: 0 3px 0 #6b3fb5; }
+  .panel p { margin: 0; font-size: 14px; line-height: 1.7; opacity: .9; }
+  .stamps { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 360px; }
+  .stamps img { width: 40px; height: 40px; }
+  .plbl { font-size: 12px; opacity: .75; }
+  .ttl { display: flex; align-items: center; gap: 10px; }
+  .panel p.howto, #howtoBox p.howto { margin: 0; font-size: 16px; font-weight: 800; color: #ffd76a; opacity: 1; line-height: 1.35; }
+  #howtoBox { position: fixed; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(10,6,20,.7); }
+  #howtoBox.show { display: flex; }
+  #howtoBox .card { display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 340px; padding: 20px 18px; border-radius: 16px; background: #2a1f48; box-shadow: 0 8px 30px rgba(0,0,0,.5); text-align: center; }
+  #howtoBox button { font: inherit; font-size: 18px; font-weight: 800; padding: 8px 40px; border: 0; border-radius: 14px; color: #1b1430; background: #ffd76a; box-shadow: 0 4px 0 #b8902a; cursor: pointer; }
+  .panel button#btnHowto { font-size: 13px; padding: 4px 14px; background: rgba(255,255,255,.15); color: #f3ecff; box-shadow: none; }
+  .ttl .bear { width: 44px; height: 44px; }
+  #resultBear { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; }
+  #resultBear img { width: 40px; height: 40px; }
+  .songs { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; max-width: 360px; flex: 1 1 auto; min-height: 0; }
+  #title { justify-content: flex-start; }
+  .first { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 14px; border-radius: 14px; background: rgba(255,215,106,.12); }
+  #songBtns {
+    display: flex; flex-direction: column; gap: 6px; width: 100%;
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 2px 4px 8px; box-sizing: border-box;
+  }
+  .srow { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+  .panel .srow button.play { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 6px; text-align: left; }
+  .srow .ic { flex: 0 0 32px; width: 32px; height: 32px; }
+  .srow .nm { flex: 1 1 auto; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; }
+  .srow .best { flex: 0 0 auto; font-size: 14px; }
+  .panel .srow button.reset { flex: 0 0 auto; font-size: 11px; font-weight: 400; padding: 4px 7px; border-radius: 8px; background: rgba(255,255,255,.15); color: #f3ecff; box-shadow: none; }
+  .panel button.sub { font-size: 14px; padding: 8px 24px; background: rgba(255,255,255,.15); color: #f3ecff; box-shadow: none; }
+  .panel button {
+    font: inherit; font-size: 20px; font-weight: 800;
+    color: #1b1430; background: #ffd76a;
+    border: 0; border-radius: 14px;
+    padding: 12px 40px; cursor: pointer;
+    box-shadow: 0 4px 0 #b8902a;
+  }
+  .panel button:active { transform: translateY(3px); box-shadow: 0 1px 0 #b8902a; }
+  .offset { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .offset button { font-size: 14px; padding: 4px 12px; border-radius: 8px; box-shadow: 0 2px 0 #b8902a; }
+  .credit { font-size: 11px; opacity: .6; line-height: 1.6; }
+  .vol { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 13px; }
+  .vrow { display: flex; align-items: center; gap: 8px; }
+  .vrow .lb { width: 1.2em; }
+  .gauge { display: flex; gap: 3px; padding: 4px 0; cursor: pointer; touch-action: none; }
+  .gauge i { display: block; width: 16px; height: 18px; border-radius: 3px; background: rgba(255,255,255,.18); }
+  .gauge i.on { background: #ffd76a; }
+  #resultTitle { font-size: 20px; font-weight: 800; }
+  #newBest { font-size: 15px; font-weight: 800; color: #ffd76a; }
+  #hellRow { display: none; flex-direction: column; align-items: center; gap: 2px; }
+  #hellRow.show { display: flex; }
+  #btnHell { font-size: 15px; padding: 6px 18px; background: rgba(255,255,255,.15); color: #f3ecff; box-shadow: none; }
+  #btnHell.on { background: #ff5a5a; color: #fff; box-shadow: 0 3px 0 #9a2020; }
+  #hellRow .plbl { font-size: 11px; }
+  #title.hell { background: radial-gradient(ellipse at 50% 110%, rgba(170,20,20,.85), rgba(40,4,10,.95) 65%); }
+  #title.hell h1 { color: #ff8a5a; text-shadow: 0 3px 0 #6b0f0f, 0 0 18px rgba(255,60,30,.6); }
+  #hellUnlock { font-size: 16px; font-weight: 800; color: #ff7a5a; }
+  .panel button#hellTest { font-size: 11px; font-weight: 400; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,.12); color: #f3ecff; box-shadow: none; }
+  #btnPause {
+    position: fixed; top: 8px; right: 8px;
+    display: none; width: 44px; height: 36px; border: 0; border-radius: 10px;
+    font: inherit; font-size: 15px; font-weight: 800; letter-spacing: -1px;
+    color: #f3ecff; background: rgba(255,255,255,.16); cursor: pointer;
+  }
+  #btnPause.show { display: block; }
+  #rank { font-size: 64px; font-weight: 800; color: #ffd76a; line-height: 1; }
+  #resultBody { font-size: 15px; line-height: 1.9; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="title" class="panel show">
+  <h1 class="ttl"><img class="px bear" src="img/bear3.png" alt="">クマリズム<span style="font-size:14px;color:#ff7a7a">テスト</span><img class="px bear" src="img/bear9.png" alt=""></h1>
+  <div class="stamps">
+    <img class="px" src="img/ekkuma.png" alt=""><img class="px" src="img/kahha.png" alt=""><img class="px" src="img/chupa.png" alt=""><img class="px" src="img/tyamasu.png" alt=""><img class="px" src="img/shimao.png" alt=""><img class="px" src="img/honyu.png" alt=""><img class="px" src="img/toreda.png" alt="">
+  </div>
+  <button id="btnHowto">操作説明</button>
+  <div class="first"><div class="plbl">はじめて遊ぶときは<br>まず「合わせる」でずれを合わせてね</div>
+  <div class="offset">ずれ補正 <button id="offMinus">-</button><span id="offVal">0 ミリ秒</span><button id="offPlus">+</button><button id="btnCalib">合わせる</button></div>
+  </div>
+  <div class="vol" data-vol></div>
+  <div id="hellRow"><button id="btnHell">ヘルモード OFF</button><div class="plbl" id="hellHelp">ON にすると3列。← ↓ → か A S D／スマホは列をタップ</div></div>
+  <button id="hellTest" style="display:none">テスト用：記録を最初の状態に戻す</button>
+  <div class="songs"><div class="plbl">曲をえらんで遊ぶ</div><div id="songBtns"></div></div>
+  <p class="credit">声：VOICEVOX:ずんだもん<br>絵：高峰クマスン メンバーシップ絵文字</p>
+</div>
+<div id="howtoBox"><div class="card">
+  <p class="howto">スタンプが線に重なったらタップ！<br><span style="font-size:12px;font-weight:400;opacity:.8">PC はどのキーでもOK（Esc で一時停止）</span><br><span style="font-size:12px;font-weight:400;color:#ff9a9a">Bluetooth イヤホンでは遊べません（声が遅れて聞こえる）<br>スピーカーか有線イヤホンで遊んでね</span></p>
+  <button id="btnHowtoOk">OK</button>
+</div></div>
+<button id="btnPause" aria-label="一時停止">II</button>
+<div id="pause" class="panel">
+  <div id="pauseTitle" style="font-size:22px;font-weight:800">一時停止</div>
+  <div class="vol" data-vol></div>
+  <button id="btnResume">つづける</button>
+  <button id="btnRestart" class="sub">はじめから</button>
+  <button id="btnQuit" class="sub">タイトルへ</button>
+</div>
+<div id="result" class="panel">
+  <div id="resultTitle"></div>
+  <div id="newBest" style="display:none">自己ベスト更新！</div>
+  <div id="hellUnlock" style="display:none">全曲エンジェルスン！ ヘルモード解放</div>
+  <div id="rank">S</div>
+  <div id="resultBear"></div>
+  <div id="resultBody"></div>
+  <button id="btnSuggest" class="sub" style="display:none"></button>
+  <button id="btnRetry">もう一度</button>
+  <button id="btnFull" class="sub">通しで遊ぶ</button>
+  <button id="btnTitle" class="sub">タイトルへ</button>
+</div>
+<script>
+const BPM = 100;
+const BEAT = 60 / BPM;
+const BAR = 4;
+const PERFECT = 0.055;
+const GOOD = 0.11;
+const OTETSUKI_PTS = 50;
+const WORDS = {
+  ekkuma:  { label: 'エックマ',         len: 1, img: 'img/ekkuma.png',  color: '#ff7aa8' },
+  kahha:   { label: 'かっはぁ',         len: 1, img: 'img/kahha.png',   color: '#ffb84d' },
+  chupa:   { label: 'ちゅぱ',           len: 0.5, img: 'img/chupa.png',   color: '#7ad0ff' },
+  tyamasu: { label: 'テャマスィー',     len: 1, img: 'img/tyamasu.png', color: '#b08cff' },
+  shimao:  { label: 'しまおぱぱいぽい', len: 2, img: 'img/shimao.png',  color: '#7dffa0' },
+  honyu:   { label: 'ほにゅうだん',     len: 2, img: 'img/honyu.png',   color: '#ffe066' },
+  toreda:  { label: 'とれだか',         len: 1, img: 'img/toreda.png',  color: '#ff8a6a' },
+  kenzen:  { label: '健全',             len: 1, img: null, text: ['健全'],        color: '#9fe8d8' },
+  purin:   { label: 'プリンペラン',     len: 2, img: null, text: ['プリン', 'ペラン'], color: '#f5b3ff' }
+};
+const READ = [['しまおぱぱいぽい', 'shimao'], ['テャマスィー', 'tyamasu'], ['ほにゅうだん', 'honyu'], ['エックマ', 'ekkuma'],
+              ['かっはぁ', 'kahha'], ['とれだか', 'toreda'], ['ちゅぱ', 'chupa'], ['プリンペラン', 'purin'], ['健全', 'kenzen'], ['・', null], ['<', 'back']];
+const REST = 0.5;
+const LYRICS = [
+  'エックマかっはぁちゅぱテャマスィー',
+  'しまおぱぱいぽいちゅぱテャマスィー',
+  'ちゅぱちゅぱかっはぁちゅぱかっはぁ',
+  'しまおぱぱいぽいちゅぱかっはぁ',
+  'テャマスィーエックマちゅぱかっはぁ',
+  'ちゅぱちゅぱエックマほにゅうだん',
+  'かっはぁかっはぁちゅぱとれだか',
+  'しまおぱぱいぽいほにゅうだん',
+  'しまおぱぱいぽいしまおぱぱいぽい',
+  'エックマちゅぱちゅぱちゅぱテャマスィー',
+  'とれだかエックマちゅぱかっはぁ',
+  'ちゅぱちゅぱかっはぁほにゅうだん',
+  'エックマテャマスィーちゅぱテャマスィー',
+  'とれだかちゅぱちゅぱちゅぱかっはぁ',
+  'エックマかっはぁちゅぱかっはぁ',
+  'しまおぱぱいぽいちゅぱとれだか',
+  '健全健全プリンペラン'
+];
+const SONGS = [
+  { id: 'menshi2', name: 'メンシのうた（ショート）', base: 'menshi2', ver: 'short', src: 'bgm/menshi2.wav', at: 1.0, lyrics: [
+    'エックマかっはぁちゅぱテャマスィー',
+    'しまおぱぱいぽいちゅぱテャマスィー',
+    'ちゅぱちゅぱかっはぁちゅぱかっはぁ',
+    'しまおぱぱいぽいちゅぱかっはぁ',
+    'テャマスィーエックマちゅぱかっはぁ',
+    'ちゅぱちゅぱエックマほにゅうだん',
+    'かっはぁかっはぁちゅぱとれだか',
+    'しまおぱぱいぽいほにゅうだん',
+    'しまおぱぱいぽいしまおぱぱいぽい',
+    'エックマちゅぱちゅぱちゅぱテャマスィー',
+    'とれだかエックマちゅぱかっはぁ',
+    'ちゅぱちゅぱかっはぁほにゅうだん',
+    'エックマテャマスィーちゅぱテャマスィー',
+    'とれだかちゅぱちゅぱちゅぱかっはぁ',
+    'エックマかっはぁちゅぱかっはぁ',
+    'しまおぱぱいぽい',
+    'エックマ・かっはぁ・とれだか',
+    'テャマスィー・エックマ・かっはぁ',
+    '健全ちゅぱちゅぱ健全ちゅぱちゅぱ',
+    'しまおぱぱいぽいほにゅうだん',
+    'ちゅぱちゅぱエックマちゅぱちゅぱかっはぁ',
+    'ちゅぱちゅぱテャマスィーちゅぱちゅぱとれだか',
+    'ほにゅうだん<エックマ・かっはぁ',
+    'プリンペラン',
+    '・エックマ・かっはぁ健全',
+    '・テャマスィー・とれだか健全',
+    'エックマかっはぁテャマスィーとれだか',
+    'しまおぱぱいぽいしまおぱぱいぽい',
+    'ちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱ',
+    'ほにゅうだんほにゅうだん',
+    '健全',
+    '健全',
+    'エックマかっはぁちゅぱテャマスィー',
+    'しまおぱぱいぽいちゅぱテャマスィー',
+    'とれだかエックマちゅぱかっはぁ',
+    'ちゅぱちゅぱかっはぁほにゅうだん',
+    'しまおぱぱいぽいプリンペラン',
+    '健全健全プリンペラン'
+  ] },
+  { id: 'yuttari', name: 'おさんぽ', base: 'yuttari', ver: 'short', src: 'bgm/yuttari.wav', at: 1.0, lyrics: [
+    'エックマかっはぁエックマ',
+    'テャマスィーとれだかテャマスィー',
+    'エックマかっはぁエックマかっはぁ',
+    'しまおぱぱいぽいほにゅうだん',
+    'とれだかエックマとれだかエックマ',
+    'かっはぁテャマスィーしまおぱぱいぽい',
+    'エックマちゅぱちゅぱかっはぁちゅぱちゅぱ',
+    'ほにゅうだんプリンペラン',
+    'エックマエックマかっはぁかっはぁ',
+    'テャマスィーテャマスィーとれだかとれだか',
+    'しまおぱぱいぽいエックマかっはぁ',
+    'とれだかちゅぱちゅぱほにゅうだん',
+    'エックマ・かっはぁ・とれだか',
+    'テャマスィー・エックマ・かっはぁ',
+    'しまおぱぱいぽいちゅぱちゅぱとれだか',
+    'しまおぱぱいぽいほにゅうだん',
+    'エックマかっはぁプリンペラン'
+  ] },
+  { id: 'menshi', name: 'はじまりのうた', base: 'menshi', ver: 'short', src: 'bgm/groove.wav', at: 0.995, lyrics: LYRICS },
+  { id: 'break', name: 'もりあがりクマ', base: 'break', ver: 'full', src: 'bgm/break.wav', at: 1.0, lyrics: [
+    'エックマかっはぁエックマかっはぁ',
+    'テャマスィー・・とれだか・・',
+    'エックマかっはぁエックマかっはぁ',
+    'しまおぱぱいぽいほにゅうだん',
+    'とれだかちゅぱちゅぱとれだか',
+    'テャマスィーちゅぱちゅぱエックマ',
+    'かっはぁかっはぁとれだかとれだか',
+    'しまおぱぱいぽいしまおぱぱいぽい',
+    'エックマ',
+    'テャマスィー',
+    'しまおぱぱいぽい',
+    'ちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱ',
+    'エックマちゅぱちゅぱかっはぁちゅぱちゅぱ',
+    'テャマスィーちゅぱちゅぱとれだかちゅぱちゅぱ',
+    'しまおぱぱいぽいちゅぱちゅぱちゅぱちゅぱ',
+    'エックマかっはぁほにゅうだん',
+    'とれだかちゅぱちゅぱエックマちゅぱちゅぱ',
+    'かっはぁちゅぱちゅぱテャマスィーちゅぱちゅぱ',
+    'しまおぱぱいぽいとれだかちゅぱちゅぱ',
+    'エックマかっはぁテャマスィーとれだか',
+    'ほにゅうだん',
+    'しまおぱぱいぽい',
+    'プリンペラン',
+    'ちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱ',
+    'エックマかっはぁプリンペラン'
+  ] },
+  { id: 'norinori', name: 'ノリノリクマ', base: 'norinori', ver: 'full', src: 'bgm/norinori.wav', at: 1.0, lyrics: [
+    'エックマ・ちゅぱかっはぁ・ちゅぱ',
+    'テャマスィー・ちゅぱとれだか',
+    'エックマ・とれだか・かっはぁ',
+    'しまおぱぱいぽい・テャマスィー',
+    'ちゅぱエックマ・ちゅぱテャマスィー',
+    '・かっはぁ・とれだかエックマ',
+    'エックマエックマかっはぁかっはぁ',
+    'プリンペラン',
+    'とれだか・かっはぁ・とれだか',
+    'エックマ・ちゅぱほにゅうだん',
+    '・テャマスィーエックマ・かっはぁ',
+    'しまおぱぱいぽいしまおぱぱいぽい',
+    'ちゅぱちゅぱエックマちゅぱちゅぱかっはぁ',
+    'ちゅぱちゅぱテャマスィーちゅぱちゅぱとれだか',
+    'エックマかっはぁテャマスィーとれだか',
+    'ほにゅうだん',
+    'エックマ・ちゅぱかっはぁ・ちゅぱ',
+    'テャマスィー・エックマ・とれだか',
+    'しまおぱぱいぽいちゅぱちゅぱかっはぁ',
+    'ちゅぱエックマ・ちゅぱかっはぁ',
+    '・とれだか・とれだかエックマ',
+    'テャマスィーエックマ・ちゅぱかっはぁ',
+    'ちゅぱちゅぱちゅぱちゅぱしまおぱぱいぽい',
+    'しまおぱぱいぽい',
+    'とれだか・ちゅぱエックマかっはぁ'
+  ] },
+  { id: 'long', name: '胴長ックマ', base: 'long', ver: 'short', src: 'bgm/long.wav', at: 1.0, lyrics: [
+    'エックマ・・かっはぁ・・',
+    'テャマスィー・・とれだか・・',
+    'エックマかっはぁテャマスィー',
+    'しまおぱぱいぽい・・ちゅぱ',
+    'エックマちゅぱちゅぱかっはぁ',
+    'とれだかちゅぱちゅぱテャマスィー',
+    'しまおぱぱいぽいとれだか',
+    'ほにゅうだんほにゅうだん',
+    'エックマエックマエックマエックマ',
+    'かっはぁかっはぁかっはぁかっはぁ',
+    'とれだかとれだかテャマスィーテャマスィー',
+    'しまおぱぱいぽいしまおぱぱいぽい',
+    'ほにゅうだん',
+    'しまおぱぱいぽい',
+    'プリンペラン',
+    'ちゅぱちゅぱちゅぱちゅぱエックマかっはぁ',
+    'エックマちゅぱちゅぱかっはぁちゅぱちゅぱ',
+    'テャマスィーちゅぱちゅぱとれだかちゅぱちゅぱ',
+    'しまおぱぱいぽいちゅぱちゅぱちゅぱちゅぱ',
+    'エックマかっはぁほにゅうだん',
+    'ちゅぱエックマちゅぱかっはぁちゅぱちゅぱ',
+    'ちゅぱテャマスィーちゅぱとれだかちゅぱちゅぱ',
+    'しまおぱぱいぽいエックマかっはぁ',
+    'とれだかとれだかほにゅうだん',
+    'エックマ・ちゅぱかっはぁ・ちゅぱ',
+    'テャマスィー・ちゅぱとれだか・ちゅぱ',
+    'しまおぱぱいぽい・ちゅぱちゅぱ',
+    'ほにゅうだん',
+    'しまおぱぱいぽい',
+    'プリンペラン',
+    'エックマかっはぁテャマスィーとれだか',
+    'しまおぱぱいぽいほにゅうだん',
+    'しまおぱぱいぽいプリンペラン'
+  ] },
+  { id: 'muzukashii', name: 'ちゅぱ地獄', base: 'muzukashii', ver: 'short', src: 'bgm/muzukashii.wav', at: 1.0, lyrics: [
+    'ちゅぱエックマちゅぱかっはぁちゅぱちゅぱ',
+    'ちゅぱテャマスィーちゅぱとれだかちゅぱちゅぱ',
+    'エックマちゅぱかっはぁちゅぱテャマスィー',
+    'しまおぱぱいぽいちゅぱちゅぱエックマ',
+    'テャマスィーちゅぱテャマスィーちゅぱとれだか',
+    'かっはぁちゅぱちゅぱちゅぱかっはぁちゅぱ',
+    'エックマちゅぱちゅぱしまおぱぱいぽい',
+    'ほにゅうだんちゅぱちゅぱかっはぁ',
+    'ちゅぱちゅぱちゅぱエックマちゅぱかっはぁ',
+    'ちゅぱちゅぱちゅぱテャマスィーちゅぱとれだか',
+    'しまおぱぱいぽいちゅぱテャマスィーちゅぱ',
+    'しまおぱぱいぽいちゅぱかっはぁちゅぱ',
+    'エックマかっはぁちゅぱテャマスィーちゅぱ',
+    'とれだかちゅぱとれだかちゅぱエックマ',
+    'ちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱ',
+    'しまおぱぱいぽいしまおぱぱいぽい',
+    'エックマちゅぱかっはぁちゅぱとれだか',
+    'テャマスィーちゅぱエックマちゅぱかっはぁ',
+    'ちゅぱほにゅうだんちゅぱエックマ',
+    'ちゅぱちゅぱしまおぱぱいぽいとれだか',
+    'かっはぁちゅぱかっはぁちゅぱかっはぁ',
+    'テャマスィーちゅぱテャマスィーちゅぱテャマスィー',
+    'ちゅぱエックマちゅぱとれだかちゅぱちゅぱ',
+    'しまおぱぱいぽいちゅぱちゅぱちゅぱちゅぱ',
+    'ちゅぱちゅぱエックマちゅぱちゅぱテャマスィー'
+  ] },
+  { id: 'zurashi', name: 'ズレックマ', base: 'zurashi', ver: 'short', src: 'bgm/yuttari.wav', at: 1.0, lyrics: [
+    '・エックマ・エックマちゅぱちゅぱ',
+    '・かっはぁ・かっはぁちゅぱちゅぱ',
+    '・テャマスィー・テャマスィーちゅぱちゅぱ',
+    'しまおぱぱいぽい・とれだかちゅぱ',
+    'エックマ・かっはぁ・とれだか',
+    'テャマスィー・エックマ・かっはぁ',
+    '・とれだか・とれだかちゅぱちゅぱ',
+    'ほにゅうだん<エックマ・かっはぁ',
+    '・エックマかっはぁ・テャマスィー',
+    '・とれだかエックマ・かっはぁ',
+    'ちゅぱちゅぱ・エックマ・かっはぁ',
+    'しまおぱぱいぽい・テャマスィーちゅぱ',
+    'ほにゅうだん<テャマスィー・とれだか',
+    '・エックマ・かっはぁちゅぱちゅぱ',
+    '・テャマスィー・とれだかちゅぱちゅぱ',
+    'しまおぱぱいぽい・かっはぁちゅぱ',
+    '・エックマかっはぁちゅぱテャマスィー'
+  ] },
+  { id: 'ura', name: '裏熊女子', base: 'ura', ver: 'full', src: 'bgm/norinori.wav', at: 1.0, lyrics: [
+    '・エックマ・エックマ・ちゅぱ',
+    '・かっはぁ・とれだかちゅぱちゅぱ',
+    '・テャマスィーエックマ・かっはぁ',
+    'しまおぱぱいぽい・とれだかちゅぱ',
+    'エックマ・とれだか・かっはぁ',
+    '・テャマスィーちゅぱしまおぱぱいぽい',
+    '・かっはぁエックマとれだかちゅぱ',
+    'プリンペラン',
+    '・エックマとれだかちゅぱテャマスィー',
+    'ほにゅうだん<エックマ・ちゅぱちゅぱ',
+    '・とれだかかっはぁエックマちゅぱ',
+    'しまおぱぱいぽいちゅぱかっはぁちゅぱ',
+    'エックマちゅぱテャマスィーちゅぱとれだか',
+    '・かっはぁエックマちゅぱテャマスィー',
+    'しまおぱぱいぽいちゅぱちゅぱかっはぁ',
+    'ほにゅうだん',
+    '・エックマかっはぁテャマスィーちゅぱ',
+    '・テャマスィーちゅぱテャマスィーとれだか',
+    'しまおぱぱいぽいちゅぱエックマちゅぱ',
+    '・かっはぁちゅぱとれだかちゅぱちゅぱ',
+    'とれだかちゅぱエックマちゅぱテャマスィー',
+    '・かっはぁエックマとれだかちゅぱ',
+    'ほにゅうだん<エックマちゅぱかっはぁ',
+    'しまおぱぱいぽい',
+    'エックマちゅぱちゅぱとれだかかっはぁ'
+  ] },
+  { id: 'shinkope', name: 'クマのつまづき', base: 'shinkope', ver: 'full', src: 'bgm/break.wav', at: 1.0, lyrics: [
+    'エックマ・かっはぁ・とれだか',
+    'テャマスィー・エックマ・かっはぁ',
+    'とれだか・テャマスィー・エックマ',
+    'しまおぱぱいぽい・かっはぁ',
+    '・かっはぁ・とれだかテャマスィー',
+    'ほにゅうだん<テャマスィー・エックマ',
+    'とれだか・しまおぱぱいぽい',
+    'ほにゅうだん<ほにゅうだん',
+    '・エックマ',
+    '・テャマスィー',
+    '・しまおぱぱいぽい',
+    '・かっはぁ・かっはぁちゅぱちゅぱ',
+    'エックマ・エックマ・エックマ',
+    'かっはぁ・かっはぁ・とれだか',
+    '・しまおぱぱいぽい・テャマスィー',
+    'ほにゅうだん<エックマ・とれだか',
+    '・テャマスィーとれだか・エックマ',
+    '・かっはぁ・しまおぱぱいぽい',
+    'とれだか・テャマスィー・かっはぁ',
+    '・ほにゅうだん・エックマ',
+    '・ほにゅうだん',
+    '・しまおぱぱいぽい',
+    '・プリンペラン',
+    '・エックマ・かっはぁちゅぱちゅぱ',
+    'エックマ・かっはぁちゅぱテャマスィー'
+  ] },
+  { id: 'shin2', name: 'くまやすみ', base: 'shin2', ver: 'short', src: 'bgm/shin2.wav', at: 1.0, lyrics: [
+    'エックマ・・かっはぁ・・',
+    'テャマスィー・・とれだか・・',
+    'エックマかっはぁエックマかっはぁ',
+    'しまおぱぱいぽい・・ちゅぱ',
+    'とれだかちゅぱちゅぱテャマスィーちゅぱちゅぱ',
+    'エックマちゅぱちゅぱかっはぁちゅぱちゅぱ',
+    '・テャマスィー・エックマとれだか',
+    'ほにゅうだんプリンペラン',
+    'エックマ・かっはぁ・テャマスィー',
+    'とれだか・エックマ・かっはぁ',
+    'しまおぱぱいぽいちゅぱちゅぱちゅぱちゅぱ',
+    'ほにゅうだん<とれだか・テャマスィー',
+    'ちゅぱエックマちゅぱかっはぁとれだか',
+    'ちゅぱテャマスィーちゅぱエックマかっはぁ',
+    'しまおぱぱいぽい',
+    'プリンペラン',
+    'エックマかっはぁテャマスィーとれだか',
+    '・エックマ・かっはぁちゅぱちゅぱ',
+    '・テャマスィー・とれだかちゅぱちゅぱ',
+    'しまおぱぱいぽいエックマかっはぁ',
+    'ちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱ',
+    'ほにゅうだん<エックマ・かっはぁ',
+    'しまおぱぱいぽいかっはぁテャマスィー'
+  ] },
+  { id: 'shin3', name: 'クマ多忙なり', base: 'shin3', ver: 'full', src: 'bgm/shin3.wav', at: 1.0, lyrics: [
+    'エックマちゅぱかっはぁちゅぱテャマスィー',
+    'とれだかちゅぱエックマちゅぱかっはぁ',
+    'しまおぱぱいぽいちゅぱちゅぱとれだか',
+    'ほにゅうだん<テャマスィーちゅぱちゅぱ',
+    'ちゅぱちゅぱエックマちゅぱちゅぱかっはぁ',
+    'ちゅぱちゅぱテャマスィーちゅぱちゅぱとれだか',
+    '・エックマ・かっはぁテャマスィー',
+    'しまおぱぱいぽいしまおぱぱいぽい',
+    'エックマかっはぁちゅぱちゅぱとれだか',
+    'テャマスィーエックマちゅぱちゅぱかっはぁ',
+    'ほにゅうだん<エックマちゅぱかっはぁ',
+    'しまおぱぱいぽいちゅぱテャマスィーちゅぱ',
+    '・とれだか・エックマかっはぁ',
+    '・テャマスィー・とれだかちゅぱちゅぱ',
+    'ちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱ',
+    'プリンペランほにゅうだん',
+    'エックマちゅぱちゅぱかっはぁちゅぱちゅぱ',
+    'テャマスィーちゅぱちゅぱとれだかちゅぱちゅぱ',
+    'しまおぱぱいぽいエックマちゅぱちゅぱ',
+    'かっはぁちゅぱかっはぁちゅぱかっはぁ',
+    'テャマスィーちゅぱテャマスィーちゅぱとれだか',
+    'ほにゅうだん<エックマ・ちゅぱちゅぱ',
+    'しまおぱぱいぽい',
+    'ほにゅうだん',
+    'エックマかっはぁテャマスィーとれだか',
+    'ちゅぱちゅぱちゅぱちゅぱしまおぱぱいぽい',
+    'とれだかちゅぱちゅぱエックマテャマスィー'
+  ] },
+  { id: 'shin4', name: '休日のクマ', base: 'shin4', ver: 'full', src: 'bgm/shin4.wav', at: 1.0, lyrics: [
+    'エックマかっはぁエックマかっはぁ',
+    'テャマスィーとれだかテャマスィーとれだか',
+    'しまおぱぱいぽいエックマかっはぁ',
+    'ほにゅうだんプリンペラン',
+    'エックマ・かっはぁ・とれだか',
+    'テャマスィー・エックマ・かっはぁ',
+    'ちゅぱちゅぱエックマちゅぱちゅぱかっはぁ',
+    'しまおぱぱいぽいしまおぱぱいぽい',
+    '・エックマ・エックマちゅぱちゅぱ',
+    '・かっはぁ・とれだかテャマスィー',
+    'エックマ',
+    'しまおぱぱいぽい',
+    'エックマちゅぱちゅぱかっはぁちゅぱちゅぱ',
+    'テャマスィーちゅぱちゅぱとれだかちゅぱちゅぱ',
+    'しまおぱぱいぽいちゅぱちゅぱちゅぱちゅぱ',
+    'ほにゅうだん<エックマ・かっはぁ',
+    'とれだかエックマかっはぁテャマスィー',
+    '・とれだか・エックマかっはぁ',
+    'ちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱ',
+    'プリンペラン',
+    'エックマかっはぁテャマスィーとれだか',
+    'ちゅぱエックマちゅぱかっはぁとれだか',
+    'しまおぱぱいぽいほにゅうだん',
+    'エックマエックマかっはぁかっはぁ',
+    'しまおぱぱいぽい',
+    'ほにゅうだん',
+    'エックマかっはぁプリンペラン'
+  ] },
+  { id: 'shin5', name: 'ねぼけクマ', base: 'shin5', ver: 'short', src: 'bgm/shin5.wav', at: 1.0, lyrics: [
+    'エックマ・・かっはぁ・・',
+    'とれだか・・テャマスィー・・',
+    'エックマかっはぁとれだか',
+    'しまおぱぱいぽい・・ちゅぱ',
+    '・エックマ・かっはぁちゅぱちゅぱ',
+    '・テャマスィー・とれだかちゅぱちゅぱ',
+    'エックマかっはぁほにゅうだん',
+    'しまおぱぱいぽいプリンペラン',
+    'とれだかちゅぱちゅぱエックマちゅぱちゅぱ',
+    'かっはぁちゅぱちゅぱテャマスィーちゅぱちゅぱ',
+    'エックマ・かっはぁ・とれだか',
+    'ほにゅうだん<テャマスィー・エックマ',
+    'ちゅぱちゅぱかっはぁちゅぱちゅぱとれだか',
+    'しまおぱぱいぽいしまおぱぱいぽい',
+    'エックマちゅぱかっはぁちゅぱテャマスィー',
+    'とれだかちゅぱエックマちゅぱかっはぁ',
+    '・テャマスィーエックマ・かっはぁ',
+    '・とれだかエックマ・テャマスィー',
+    'しまおぱぱいぽいちゅぱちゅぱかっはぁ',
+    'ちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱちゅぱ',
+    'ほにゅうだん<エックマちゅぱかっはぁ',
+    'エックマエックマかっはぁかっはぁ',
+    'テャマスィーテャマスィーとれだかとれだか',
+    'しまおぱぱいぽい',
+    'ほにゅうだん',
+    'しまおぱぱいぽい',
+    'プリンペラン',
+    'エックマかっはぁテャマスィーとれだか',
+    'ちゅぱちゅぱエックマちゅぱちゅぱかっはぁ',
+    'しまおぱぱいぽいほにゅうだん',
+    'エックマかっはぁプリンペラン'
+  ] }
+];
+const COUNT_IN = 1;
+let song = SONGS.find(s => s.id === 'menshi');
+let SONG_BARS = 0;
+function setSong(s, bars) { song = s; SONG_BARS = COUNT_IN + (bars || s.lyrics.length) + 1; }
+setSong(song);
+function splitLine(line) {
+  const out = [];
+  let rest = line;
+  while (rest.length) {
+    const hit = READ.find(r => rest.startsWith(r[0]));
+    if (!hit) throw new Error('言葉にならない歌詞: ' + rest);
+    out.push(hit[1]);
+    rest = rest.slice(hit[0].length);
+  }
+  return out;
+}
+let practice = null;
+let calib = false, calibTaps = [];
+const CALIB_BARS = 8;
+function buildPracticeChart(key) {
+  const notes = [];
+  const w = WORDS[key];
+  const end = (SONG_BARS - 1) * BAR;
+  for (let b = COUNT_IN * BAR; b + w.len <= end + 1e-9; b += w.len) {
+    notes.push({ key: key, bar: Math.floor(b / BAR), beat: b, sound: w.len, sec: b * BEAT, judge: null, at: 0 });
+  }
+  return notes;
+}
+let HELL_UI = true;
+let HELL_TEST = true;
+function bestStoreKey() { return HELL_TEST ? 'kuma_best_test' : 'kuma_best'; }
+function testStartBests() { const b = {}; SONGS.forEach(s => { if (s.id !== 'menshi2') b[s.id] = 0.9; }); return b; }
+function hellUnlocked() {
+  return HELL_UI && (SONGS.every(s => bests[s.id] !== undefined && tierOf(bests[s.id]) === BEARS.length - 1));
+}
+const LANES = 3;
+let hell = false;
+try { hell = HELL_UI && localStorage.getItem('kuma_hell') === '1'; } catch (e) {}
+function isHell() { return hell && !calib; }
+function seeded(str) {
+  let h = 1779033703;
+  for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
+  return () => { h = h + 0x6D2B79F5 | 0; let t = Math.imul(h ^ h >>> 15, h | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function assignLanes(notes) {
+  const rnd = seeded(song.id + ':hell');
+  for (const n of notes) n.lane = Math.floor(rnd() * LANES);
+  return notes;
+}
+function buildChart() {
+  if (practice) return buildPracticeChart(practice);
+  if (isHell()) return assignLanes(buildChartPlain());
+  return buildChartPlain();
+}
+function buildChartPlain() {
+  const notes = [];
+  song.lyrics.forEach((line, i) => {
+    let b = (COUNT_IN + i) * BAR;
+    const end = b + BAR;
+    for (const key of splitLine(line)) {
+      if (!key) { b += REST; continue; }
+      if (key === 'back') { b -= REST; notes[notes.length - 1].sound -= REST; continue; }
+      const w = WORDS[key];
+      notes.push({ key: key, bar: COUNT_IN + i, beat: b, sound: w.len, sec: b * BEAT, judge: null, at: 0 });
+      b += w.len;
+    }
+    if (b > end + 1e-9) throw new Error('1小節に入りきらない: ' + line);
+  });
+  return notes;
+}
+const AC = window.AudioContext || window.webkitAudioContext;
+const ac = new AC();
+const voices = {};
+let master, musicBus, voiceBus;
+function setupBus() {
+  master = ac.createGain(); master.gain.value = 0.9; master.connect(ac.destination);
+  musicBus = ac.createGain(); musicBus.gain.value = 0.55; musicBus.connect(master);
+  voiceBus = ac.createGain(); voiceBus.connect(master);
+}
+setupBus();
+const vol = { music: 10, voice: 10 };
+try { const v = JSON.parse(localStorage.getItem('menshi_vol') || '{}'); for (const k in vol) if (v[k] >= 0 && v[k] <= 10) vol[k] = v[k]; } catch (e) {}
+function applyVol() {
+  musicBus.gain.value = 0.55 * vol.music / 10;
+  voiceBus.gain.value = vol.voice / 10;
+  document.querySelectorAll('[data-vk]').forEach(g => { [...g.children].forEach((c, i) => c.classList.toggle('on', i < vol[g.dataset.vk])); });
+}
+function setVol(k, v) {
+  vol[k] = Math.max(0, Math.min(10, v));
+  try { localStorage.setItem('menshi_vol', JSON.stringify(vol)); } catch (e) {}
+  applyVol();
+}
+function bumpVol(k, d) { setVol(k, vol[k] + d); }
+function gaugeAt(g, e) {
+  const r = g.getBoundingClientRect();
+  return e.clientX < r.left ? 0 : Math.ceil((e.clientX - r.left) / r.width * 10);
+}
+document.querySelectorAll('[data-vol]').forEach(row => {
+  for (const [k, label] of [['music', '曲'], ['voice', '声']]) {
+    const line = document.createElement('div'); line.className = 'vrow';
+    const lb = document.createElement('span'); lb.className = 'lb'; lb.textContent = label;
+    const g = document.createElement('div'); g.className = 'gauge'; g.dataset.vk = k;
+    for (let i = 0; i < 10; i++) g.appendChild(document.createElement('i'));
+    let drag = false;
+    g.addEventListener('pointerdown', e => {
+      e.preventDefault(); drag = true;
+      try { g.setPointerCapture(e.pointerId); } catch (er) {}
+      const v = gaugeAt(g, e);
+      setVol(k, v === 1 && vol[k] === 1 ? 0 : v);
+    });
+    g.addEventListener('pointermove', e => { if (drag) setVol(k, gaugeAt(g, e)); });
+    g.addEventListener('pointerup', () => { drag = false; });
+    g.addEventListener('pointercancel', () => { drag = false; });
+    line.append(lb, g);
+    row.appendChild(line);
+  }
+});
+applyVol();
+function loadAudio(url) {
+  return fetch(url).then(r => r.arrayBuffer()).then(b => new Promise((ok, ng) => ac.decodeAudioData(b, ok, ng)));
+}
+const musicLoads = {}, musicReady = {};
+let musicBuf = null, musicSrc = null;
+function loadMusic(s) {
+  if (!musicLoads[s.src]) musicLoads[s.src] = loadAudio(s.src).catch(() => null).then(buf => { musicReady[s.src] = buf; });
+  return musicLoads[s.src].then(() => { if (s === song) musicBuf = musicReady[s.src]; });
+}
+const loading = Promise.all(Object.keys(WORDS).map(k => loadAudio('voice/' + k + '.wav').then(buf => { voices[k] = buf; }))
+  .concat([loadMusic(song)]));
+let noiseBuf = null;
+function noise() {
+  if (noiseBuf) return noiseBuf;
+  noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return noiseBuf;
+}
+function env(g, t, peak, dur) {
+  g.gain.setValueAtTime(peak, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+}
+function kick(t) {
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+  env(g, t, 1.0, 0.18); o.connect(g); g.connect(musicBus); o.start(t); o.stop(t + 0.2);
+}
+function hiss(t, hp, peak, dur) {
+  const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = noise(); f.type = 'highpass'; f.frequency.value = hp;
+  env(g, t, peak, dur); s.connect(f); f.connect(g); g.connect(musicBus); s.start(t); s.stop(t + dur + 0.02);
+}
+function tone(t, freq, type, peak, dur) {
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.value = freq;
+  env(g, t, peak, dur); o.connect(g); g.connect(musicBus); o.start(t); o.stop(t + dur + 0.02);
+}
+const ROOTS = [65.41, 55.0, 43.65, 49.0];
+function playEighth(i, t) {
+  const bar = Math.floor(i / 8), pos = i % 8;
+  if (bar < COUNT_IN) {
+    if (pos % 2 === 0) tone(t, pos === 0 ? 1320 : 880, 'sine', 0.35, 0.06);
+    return;
+  }
+  if (musicBuf) return;
+  if (bar === SONG_BARS - 1) {
+    if (pos === 0) { kick(t); hiss(t, 3000, 0.35, 1.2); tone(t, ROOTS[0], 'triangle', 0.5, 1.2); }
+    return;
+  }
+  const root = ROOTS[(bar - COUNT_IN) % 4];
+  if (pos === 0 || pos === 4 || pos === 5) kick(t);
+  if (pos === 2 || pos === 6) hiss(t, 1500, 0.45, 0.13);
+  hiss(t, 7000, pos % 2 ? 0.08 : 0.14, 0.04);
+  tone(t, pos === 3 || pos === 7 ? root * 2 : root, 'triangle', 0.32, BEAT / 2 * 0.9);
+}
+let voiceSrc = null;
+function playVoice(key) {
+  const buf = voices[key];
+  if (!buf) return;
+  if (voiceSrc) { try { voiceSrc.stop(); } catch (e) {} }
+  voiceSrc = ac.createBufferSource(); voiceSrc.buffer = buf; voiceSrc.connect(voiceBus); voiceSrc.start();
+}
+let chart = buildChart();
+let t0 = 0;
+let playing = false;
+let paused = false;
+let nextEighth = 0;
+let score = 0, combo = 0, maxCombo = 0;
+let counts = { perfect: 0, good: 0, miss: 0, otetsuki: 0 };
+let flash = null;
+let bursts = [];
+let shownScore = 0;
+const OFFSET_BASE_MS = -40;
+let offsetMs = 0;
+try { offsetMs = parseInt(localStorage.getItem('menshi_offset2') || '0', 10) || 0; } catch (e) {}
+const params = new URLSearchParams(location.search);
+const AUTO = params.has('auto');
+const FREEZE = params.has('t') ? parseFloat(params.get('t')) : null;
+if (params.has('preload')) SONGS.forEach(loadMusic);
+function nowSec() {
+  if (FREEZE !== null) return FREEZE;
+  const lat = ac.outputLatency || ac.baseLatency || 0;
+  return ac.currentTime - t0 - lat - (OFFSET_BASE_MS + offsetMs) / 1000;
+}
+function resetGame() {
+  chart = buildChart();
+  score = 0; combo = 0; maxCombo = 0;
+  counts = { perfect: 0, good: 0, miss: 0, otetsuki: 0 };
+  flash = null;
+  bursts = []; shownScore = 0; shards = []; tierShown = 0; tierAt = -9;
+  calibTaps = [];
+}
+function judgeTap(sec, lane) {
+  let best = null, bestD = 1e9;
+  for (const n of chart) {
+    if (n.judge) continue;
+    if (isHell() && n.lane !== lane) continue;
+    const d = Math.abs(sec - n.sec);
+    if (d < bestD) { bestD = d; best = n; }
+    if (n.sec > sec + GOOD) break;
+  }
+  if (!best || bestD > GOOD) return null;
+  const j = bestD <= PERFECT ? 'perfect' : 'good';
+  best.judge = j; best.at = sec;
+  counts[j]++; combo++; maxCombo = Math.max(maxCombo, combo);
+  score += j === 'perfect' ? 100 : 50;
+  flash = { text: j === 'perfect' ? 'ぴったり!' : 'いいね', at: sec, color: j === 'perfect' ? '#ffd76a' : '#9fe8d8' };
+  addBurst(sec, WORDS[best.key].color, j === 'perfect' ? 100 : 50, best.lane);
+  if (j === 'perfect') addShatter(sec, best.key, tierOf(scoreRate(score)), best.lane);
+  return best;
+}
+function otetsuki(sec) {
+  if (calib || sec < COUNT_IN * BAR * BEAT - GOOD || sec > SONG_BARS * BAR * BEAT) return;
+  counts.otetsuki++; combo = 0;
+  score = Math.max(0, score - OTETSUKI_PTS);
+  flash = { text: 'お手付き', at: sec, color: '#ff7a7a' };
+}
+function sweepMisses(sec) {
+  for (const n of chart) {
+    if (n.judge) continue;
+    if (n.sec > sec - GOOD) break;
+    n.judge = 'miss'; n.at = sec;
+    counts.miss++; combo = 0;
+    flash = { text: 'ミス', at: sec, color: '#ff7a7a' };
+  }
+}
+function rankOf() {
+  const n = chart.length;
+  const r = (counts.perfect + counts.good * 0.5 - counts.otetsuki * 0.5) / n;
+  return r >= 0.95 ? 'S' : r >= 0.85 ? 'A' : r >= 0.7 ? 'B' : 'C';
+}
+const FAIL_RATE = 0.5;
+function isFailed() {
+  if (calib) return false;
+  const left = chart.filter(n => !n.judge).length;
+  return score + left * 100 < chart.length * 100 * FAIL_RATE;
+}
+function stopMusic() {
+  if (musicSrc) { try { musicSrc.stop(); } catch (e) {} musicSrc = null; }
+}
+function finish() {
+  playing = false;
+  document.getElementById('btnPause').classList.remove('show');
+  stopMusic();
+  document.getElementById('resultTitle').textContent = song.name + (isHell() ? '（ヘル）' : '');
+  const failed = isFailed();
+  document.getElementById('rank').textContent = failed ? '失敗' : rankOf();
+  document.getElementById('rank').style.color = failed ? '#ff7a7a' : '';
+  const bt = tierOf(scoreRate(score));
+  const wasOpen = hellUnlocked();
+  document.getElementById('newBest').style.display = !calib && saveBest(bestKey(song.id), scoreRate(score)) ? '' : 'none';
+  document.getElementById('hellUnlock').style.display = !wasOpen && hellUnlocked() ? '' : 'none';
+  refreshHell();
+  document.getElementById('resultBear').innerHTML = '<img class="px" src="img/bear' + (bt + 1) + '.png" alt="">' + BEARS[bt] + 'まで（' + Math.floor(scoreRate(score) * 100) + '%）';
+  document.getElementById('resultBody').innerHTML =
+    'スコア ' + score + '<br>ぴったり ' + counts.perfect + ' / いいね ' + counts.good + ' / ミス ' + counts.miss + ' / お手付き ' + counts.otetsuki +
+    '<br>最大コンボ ' + maxCombo + '（全 ' + chart.length + '）' + timingText();
+  showSuggest();
+  if (calib) finishCalib();
+  document.getElementById('result').classList.add('show');
+}
+function timingAverages() {
+  const hit = chart.filter(n => n.judge === 'perfect' || n.judge === 'good');
+  const half = Math.floor(hit.length / 2);
+  const avg = a => a.length ? Math.round(a.reduce((s, n) => s + (n.at - n.sec), 0) / a.length * 1000) : null;
+  return [avg(hit.slice(0, half)), avg(hit.slice(half))];
+}
+function timingText() {
+  const t = timingAverages();
+  if (t[0] === null || t[1] === null) return '';
+  const f = v => (v > 0 ? '+' : '') + v;
+  return '<br><span style="font-size:12px;opacity:.8">叩いたタイミング（−＝早い）<br>前半 ' + f(t[0]) + 'ミリ秒 / 後半 ' + f(t[1]) + 'ミリ秒</span>';
+}
+function suggestOffset() {
+  const hit = chart.filter(n => n.judge === 'perfect' || n.judge === 'good');
+  if (hit.length < 10) return null;
+  const avg = hit.reduce((s, n) => s + (n.at - n.sec), 0) / hit.length * 1000;
+  if (Math.abs(avg) < 30) return null;
+  return Math.max(-300, Math.min(300, offsetMs + Math.round(avg / 10) * 10));
+}
+function showSuggest() {
+  const b = document.getElementById('btnSuggest');
+  const v = suggestOffset();
+  b.style.display = v === null ? 'none' : '';
+  if (v !== null) { b.textContent = 'ずれ補正を ' + (v > 0 ? '+' : '') + v + ' にする'; b.dataset.v = v; }
+}
+function calibResult() {
+  if (calibTaps.length < 12) return null;
+  const a = calibTaps.slice().sort((x, y) => x - y);
+  const h = Math.floor(a.length / 2);
+  const med = (a.length % 2 ? a[h] : (a[h - 1] + a[h]) / 2) * 1000;
+  return { med: Math.round(med), v: Math.max(-300, Math.min(300, offsetMs + Math.round(med / 10) * 10)) };
+}
+function finishCalib() {
+  document.getElementById('resultTitle').textContent = 'ずれ合わせ';
+  document.getElementById('rank').textContent = '';
+  document.getElementById('btnSuggest').style.display = 'none';
+  const r = calibResult();
+  const f = v => (v > 0 ? '+' : '') + v;
+  if (!r) {
+    document.getElementById('resultBody').innerHTML = '叩いた数が足りなかった（' + calibTaps.length + '回）<br>音楽に合わせて全部叩いてね';
+    return;
+  }
+  const before = offsetMs;
+  bumpOffset(r.v - offsetMs);
+  document.getElementById('resultBody').innerHTML = '叩いたずれ（真ん中の値） ' + f(r.med) + 'ミリ秒<br>ずれ補正を ' + f(before) + ' → ' + f(offsetMs) + ' にしました' +
+    '<br><span style="font-size:12px;opacity:.8">もう一度やると、合っているか確かめられる</span>';
+}
+function start() {
+  resetGame();
+  ac.resume();
+  t0 = ac.currentTime + 0.4;
+  nextEighth = 0;
+  stopMusic();
+  musicBuf = musicReady[song.src] || null;
+  if (musicBuf) {
+    musicSrc = ac.createBufferSource(); musicSrc.buffer = musicBuf;
+    const fade = ac.createGain(); musicSrc.connect(fade); fade.connect(musicBus);
+    const len = SONG_BARS * BAR * BEAT;
+    musicSrc.start(t0, song.at);
+    if (musicBuf.duration - song.at > len + 1.5) {
+      fade.gain.setValueAtTime(1, t0 + len - 1.2);
+      fade.gain.linearRampToValueAtTime(0, t0 + len + 1.0);
+      musicSrc.stop(t0 + len + 1.1);
+    }
+  }
+  playing = true; paused = false;
+  document.getElementById('title').classList.remove('show');
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('pause').classList.remove('show');
+  document.getElementById('btnPause').classList.add('show');
+}
+function pauseGame() {
+  if (!playing || paused) return;
+  paused = true;
+  ac.suspend();
+  document.getElementById('pause').classList.add('show');
+}
+function resumeGame() {
+  if (!paused) return;
+  paused = false;
+  document.getElementById('pause').classList.remove('show');
+  ac.resume();
+}
+function quitGame() {
+  playing = false; paused = false;
+  stopMusic();
+  ac.resume();
+  document.getElementById('pause').classList.remove('show');
+  document.getElementById('btnPause').classList.remove('show');
+  document.getElementById('title').classList.add('show');
+}
+function schedule() {
+  if (!playing) return;
+  while (nextEighth < SONG_BARS * 8 && t0 + nextEighth * BEAT / 2 < ac.currentTime + 0.15) {
+    playEighth(nextEighth, t0 + nextEighth * BEAT / 2);
+    nextEighth++;
+  }
+}
+setInterval(schedule, 25);
+function onTap(lane) {
+  if (!playing || paused) return;
+  const sec = nowSec();
+  if (isHell()) { if (lane === undefined) return; laneHit[lane] = sec; }
+  if (calib) {
+    let d = 1e9;
+    for (const x of chart) if (Math.abs(sec - x.sec) < Math.abs(d)) d = sec - x.sec;
+    if (Math.abs(d) <= 0.3) calibTaps.push(d);
+  }
+  const n = judgeTap(sec, lane);
+  if (n) playVoice(n.key);
+  else otetsuki(sec);
+}
+const cv = document.getElementById('cv');
+const g = cv.getContext('2d');
+let W = 0, H = 0;
+let U = 1;
+function fit() {
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth; H = window.innerHeight;
+  U = Math.max(0.8, Math.min(2, W / 400, H / 760));
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', fit);
+fit();
+const imgs = {};
+for (const k in WORDS) if (WORDS[k].img) { const im = new Image(); im.src = WORDS[k].img; imgs[k] = im; }
+const BEARS = ['ヒグマスン', 'シロクマスン', 'クマスン', 'キングクマスン', 'クマレッド', 'メカスン', 'ゾンビスン', 'デビスン', 'エンジェルスン'];
+const bearImgs = BEARS.map((_, i) => { const im = new Image(); im.src = 'img/bear' + (i + 1) + '.png'; return im; });
+function scoreRate(sc) { return chart.length ? Math.max(0, Math.min(1, sc / (chart.length * 100))) : 0; }
+function tierOf(rate) { return Math.min(BEARS.length - 1, Math.floor(rate * BEARS.length)); }
+let tierShown = 0, tierAt = -9;
+let mood = 0;
+const STARS = Array.from({ length: 70 }, (_, i) => ({ x: Math.random(), y: Math.random(), r: 0.6 + Math.random() * 1.8, ph: Math.random() * 6.3, k: i / 70 }));
+const EMBERS = Array.from({ length: 50 }, () => ({ x: Math.random(), v: 0.12 + Math.random() * 0.25, ph: Math.random(), r: 1 + Math.random() * 2.5, hot: Math.random() < 0.3 }));
+const STAMP = 128;
+let shards = [];
+function addShatter(sec, key, tier, lane) {
+  const n = 3 + Math.floor(tier / 2);
+  const power = 1 + tier * 0.18;
+  const items = [];
+  for (let iy = 0; iy < n; iy++) for (let ix = 0; ix < n; ix++) {
+    const ox = (ix + 0.5) / n - 0.5, oy = (iy + 0.5) / n - 0.5;
+    const a = Math.atan2(oy, ox) + (Math.random() - 0.5) * 0.9;
+    items.push({ ix: ix, iy: iy, n: n, ox: ox, oy: oy, a: a, v: (180 + Math.random() * 220) * power, spin: (Math.random() - 0.5) * 14, hue: Math.random() * 360 });
+  }
+  const stars = [];
+  if (tier >= 4) for (let i = 0; i < 6 + tier * 3; i++) stars.push({ a: Math.random() * Math.PI * 2, v: (120 + Math.random() * 260) * power, r: 3 + Math.random() * 5 });
+  shards.push({ at: sec, key: key, tier: tier, items: items, stars: stars, lane: lane });
+  if (shards.length > 6) shards.shift();
+}
+function drawStar(x, y, r) {
+  g.beginPath();
+  for (let i = 0; i < 8; i++) { const rr = i % 2 ? r * 0.4 : r; const a = Math.PI / 4 * i; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+  g.closePath(); g.fill();
+}
+function drawShards(sec, x0, y) {
+  const ST = STAMP * U * stampK();
+  for (const sh of shards) {
+    const x = sh.lane === undefined ? x0 : laneX(sh.lane);
+    const t = sec - sh.at, life = 0.6 + sh.tier * 0.04;
+    if (t < 0 || t > life) continue;
+    const k = t / life, d = 1 - (1 - k) * (1 - k);
+    const im = imgs[sh.key], w = WORDS[sh.key];
+    for (const q of sh.items) {
+      const px = x + q.ox * ST + Math.cos(q.a) * q.v * 0.55 * d * U;
+      const py = y + q.oy * ST + Math.sin(q.a) * q.v * 0.55 * d * U + 160 * U * k * k;
+      const sz = ST / q.n * (1 - k * 0.4);
+      g.save(); g.translate(px, py); g.rotate(q.spin * t);
+      g.globalAlpha = 1 - k;
+      if (im && im.complete && im.naturalWidth) {
+        const sw = im.naturalWidth / q.n;
+        g.imageSmoothingEnabled = false;
+        g.drawImage(im, q.ix * sw, q.iy * sw, sw, sw, -sz / 2, -sz / 2, sz, sz);
+      } else { g.fillStyle = w.color; g.fillRect(-sz / 2, -sz / 2, sz, sz); }
+      if (sh.tier >= 6) {
+        g.globalCompositeOperation = 'lighter'; g.globalAlpha = (1 - k) * 0.55;
+        g.fillStyle = 'hsl(' + ((q.hue + t * 600) % 360) + ',100%,60%)'; g.fillRect(-sz / 2, -sz / 2, sz, sz);
+        g.globalCompositeOperation = 'source-over';
+      }
+      g.restore();
+    }
+    g.fillStyle = '#fff6c8';
+    for (const st of sh.stars) {
+      g.globalAlpha = (1 - k) * (0.6 + 0.4 * Math.sin(t * 40 + st.a * 5));
+      drawStar(x + Math.cos(st.a) * st.v * 0.6 * d * U, y + Math.sin(st.a) * st.v * 0.6 * d * U, st.r * U * (1 - k * 0.5));
+    }
+    g.globalAlpha = 1;
+  }
+}
+function addBurst(sec, color, pts, lane) {
+  const parts = [];
+  for (let i = 0; i < 16; i++) parts.push({ a: Math.PI * 2 * i / 16 + Math.random() * 0.3, v: 140 + Math.random() * 160, r: 3 + Math.random() * 4 });
+  bursts.push({ at: sec, color: color, pts: pts, parts: parts, lane: lane });
+  if (bursts.length > 12) bursts.shift();
+}
+function drawBursts(sec, x0, y) {
+  const SK = stampK();
+  for (const b of bursts) {
+    const x = b.lane === undefined ? x0 : laneX(b.lane);
+    const t = sec - b.at;
+    if (t < 0 || t > 0.8) continue;
+    if (t < 0.5) {
+      const k = t / 0.5;
+      const d = 1 - (1 - k) * (1 - k);
+      g.globalAlpha = 1 - k; g.fillStyle = b.color;
+      for (const q of b.parts) {
+        const r = q.v * 0.5 * d * U;
+        g.beginPath(); g.arc(x + Math.cos(q.a) * r, y + Math.sin(q.a) * r * 0.7, q.r * U * (1 - k * 0.5), 0, Math.PI * 2); g.fill();
+      }
+      g.strokeStyle = '#fff6c8'; g.lineWidth = 6 * U * (1 - k);
+      g.beginPath(); g.arc(x, y, STAMP * U * SK * (0.5 + 0.6 * d), 0, Math.PI * 2); g.stroke();
+    }
+    const k2 = t / 0.8;
+    g.globalAlpha = Math.min(1, (1 - k2) * 2);
+    g.fillStyle = b.pts >= 100 ? '#ffd76a' : '#9fe8d8';
+    g.font = '800 ' + Math.round((26 + 10 * Math.max(0, 1 - t / 0.12)) * U) + 'px "M PLUS Rounded 1c", sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('+' + b.pts, x + STAMP * U * SK * 0.8, y - STAMP * U * SK * 0.35 - 70 * U * (1 - (1 - k2) * (1 - k2)));
+    g.globalAlpha = 1;
+  }
+}
+function drawStamp(key, x, y, size, alpha) {
+  const w = WORDS[key];
+  g.globalAlpha = alpha;
+  if (imgs[key] && imgs[key].complete) {
+    g.imageSmoothingEnabled = false;
+    g.drawImage(imgs[key], x - size / 2, y - size / 2, size, size);
+  } else {
+    g.fillStyle = w.color;
+    g.beginPath(); g.arc(x, y, size * 0.45, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#1b1430';
+    g.font = '800 ' + Math.round(size * (w.text && w.text.length > 1 ? 0.2 : 0.3)) + 'px "M PLUS Rounded 1c", sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    const lines = w.text || [w.label];
+    lines.forEach((s, i) => g.fillText(s, x, y + (i - (lines.length - 1) / 2) * size * 0.24));
+  }
+  g.globalAlpha = 1;
+}
+const AHEAD = 5;
+const FAR_SCALE = 0.08;
+const PERSP = (1 / FAR_SCALE - 1) / AHEAD;
+function laneHalfW() { return isHell() ? W * 0.48 : Math.min(W * 0.46, 210 * U); }
+function stampK() { return isHell() ? Math.min(1, laneHalfW() * 2 / LANES * 0.85 / (STAMP * U)) : 1; }
+function laneX(lane, s) { return W / 2 + (lane - (LANES - 1) / 2) * laneHalfW() * 2 / LANES * (s === undefined ? 1 : s); }
+function laneAt(x) { return Math.max(0, Math.min(LANES - 1, Math.floor((x - (W / 2 - laneHalfW())) / (laneHalfW() * 2 / LANES)))); }
+const LANE_KEYS = { ArrowLeft: 0, a: 0, A: 0, ArrowDown: 1, s: 1, S: 1, ArrowRight: 2, d: 2, D: 2 };
+const LANE_MARK = ['←', '↓', '→'];
+let laneHit = Array(LANES).fill(-9);
+function draw(sec) {
+  const beatNow = sec / BEAT;
+  const judgeY = H - 150 * U, horizonY = Math.max(56 * U, H * 0.2);
+  const cx = W / 2;
+  const HL = isHell();
+  const ST = STAMP * U * stampK();
+  const laneW = laneHalfW();
+  const proj = z => { const s = 1 / (1 + PERSP * z); return { s: s, y: horizonY + (judgeY - horizonY) * s }; };
+  const NEAR = -0.6 / PERSP;
+  mood += (scoreRate(shownScore) - mood) * 0.05;
+  const pulse = (beatNow > 0 ? Math.max(0, 1 - (beatNow % 1) * 4) : 0) * (1 + mood * 0.5);
+  if (HL) {
+    g.fillStyle = 'rgb(' + Math.round(34 + 30 * mood + 40 * pulse) + ',' + Math.round(6 + 4 * pulse) + ',' + Math.round(12 + 6 * pulse) + ')';
+    g.fillRect(0, 0, W, H);
+    const fire = g.createLinearGradient(0, H, 0, H * 0.35);
+    fire.addColorStop(0, 'rgba(255,70,20,' + (0.45 + 0.2 * pulse) + ')');
+    fire.addColorStop(0.5, 'rgba(180,20,30,' + (0.18 + 0.1 * pulse) + ')');
+    fire.addColorStop(1, 'rgba(120,0,20,0)');
+    g.fillStyle = fire; g.fillRect(0, 0, W, H);
+    for (const e of EMBERS) {
+      const yy = 1 - (((sec * e.v + e.ph) % 1) + 1) % 1;
+      const xx = e.x + Math.sin(sec * 1.7 + e.ph * 9) * 0.03;
+      g.globalAlpha = Math.min(1, yy * 1.6) * (0.5 + 0.5 * Math.sin(sec * 8 + e.ph * 20));
+      g.fillStyle = e.hot ? '#ffd76a' : '#ff6a2a';
+      g.beginPath(); g.arc(xx * W, H * (0.25 + 0.75 * yy), e.r * U, 0, Math.PI * 2); g.fill();
+    }
+    g.globalAlpha = 1;
+  } else {
+  g.fillStyle = 'rgb(' + Math.round(27 + 40 * mood + 14 * pulse) + ',' + Math.round(20 + 12 * mood + 8 * pulse) + ',' + Math.round(48 + 40 * mood + 18 * pulse) + ')';
+  g.fillRect(0, 0, W, H);
+  for (const st of STARS) {
+    if (st.k > mood * 1.1) continue;
+    const yy = ((st.y - sec * 0.02 * (0.5 + st.r)) % 1 + 1) % 1;
+    g.globalAlpha = 0.35 + 0.35 * Math.sin(sec * 3 + st.ph);
+    g.fillStyle = '#fff6c8'; g.beginPath(); g.arc(st.x * W, yy * H, st.r * U, 0, Math.PI * 2); g.fill();
+  }
+  g.globalAlpha = 1;
+  }
+  if (tierShown >= 3) {
+    const hue = [0, 0, 0, 45, 0, 190, 110, 290, 50][tierShown];
+    const hgt = H * (0.45 + 0.35 * pulse / 1.5);
+    for (const sx of [0, W]) {
+      const gr = g.createLinearGradient(0, H, 0, H - hgt);
+      gr.addColorStop(0, 'hsla(' + hue + ',90%,65%,' + (0.18 + 0.12 * (tierShown - 3) / 5) + ')'); gr.addColorStop(1, 'hsla(' + hue + ',90%,65%,0)');
+      g.fillStyle = gr;
+      g.beginPath(); g.moveTo(sx, H); g.lineTo(sx + (sx ? -1 : 1) * W * 0.28, H); g.lineTo(sx + (sx ? -1 : 1) * W * 0.06, H - hgt); g.lineTo(sx, H - hgt); g.closePath(); g.fill();
+    }
+  }
+  const pf = proj(AHEAD), pn = proj(NEAR);
+  const grad = g.createLinearGradient(0, pf.y, 0, pn.y);
+  grad.addColorStop(0, HL ? 'rgba(220,40,40,0)' : 'rgba(120,90,200,0)');
+  grad.addColorStop(1, HL ? 'rgba(220,40,40,' + (0.32 + 0.2 * mood) + ')' : 'rgba(120,90,200,' + (0.28 + 0.2 * mood) + ')');
+  g.fillStyle = grad;
+  g.beginPath();
+  g.moveTo(cx - laneW * pf.s, pf.y); g.lineTo(cx + laneW * pf.s, pf.y);
+  g.lineTo(cx + laneW * pn.s, pn.y); g.lineTo(cx - laneW * pn.s, pn.y);
+  g.closePath(); g.fill();
+  g.strokeStyle = 'rgba(255,255,255,.25)'; g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(cx - laneW * pf.s, pf.y); g.lineTo(cx - laneW * pn.s, pn.y);
+  g.moveTo(cx + laneW * pf.s, pf.y); g.lineTo(cx + laneW * pn.s, pn.y);
+  g.stroke();
+  if (HL) {
+    for (let l = 0; l < LANES; l++) {
+      const k = Math.max(0, 1 - (sec - laneHit[l]) / 0.15);
+      if (k > 0) {
+        const xl = cx - laneW + laneW * 2 / LANES * l, xr = xl + laneW * 2 / LANES;
+        const gr2 = g.createLinearGradient(0, pf.y, 0, judgeY);
+        gr2.addColorStop(0, 'rgba(255,215,106,0)'); gr2.addColorStop(1, 'rgba(255,215,106,' + (0.35 * k) + ')');
+        g.fillStyle = gr2;
+        g.beginPath();
+        g.moveTo(cx + (xl - cx) * pf.s, pf.y); g.lineTo(cx + (xr - cx) * pf.s, pf.y);
+        g.lineTo(xr, judgeY); g.lineTo(xl, judgeY);
+        g.closePath(); g.fill();
+      }
+    }
+    g.strokeStyle = 'rgba(255,255,255,.18)'; g.lineWidth = 1.5;
+    g.beginPath();
+    for (let l = 1; l < LANES; l++) {
+      const xx = laneW * 2 / LANES * l - laneW;
+      g.moveTo(cx + xx * pf.s, pf.y); g.lineTo(cx + xx * pn.s, pn.y);
+    }
+    g.stroke();
+  }
+  for (let b = Math.ceil(beatNow + NEAR); b < beatNow + AHEAD; b++) {
+    const p = proj(b - beatNow);
+    const head = b % BAR === 0;
+    g.fillStyle = head ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.09)';
+    const t = (head ? 3 : 1) * p.s;
+    g.fillRect(cx - laneW * p.s, p.y - t / 2, laneW * p.s * 2, Math.max(1, t));
+  }
+  g.strokeStyle = '#ffd76a'; g.lineWidth = 4 * U;
+  g.beginPath(); g.moveTo(cx - laneW - 10 * U, judgeY); g.lineTo(cx + laneW + 10 * U, judgeY); g.stroke();
+  g.lineWidth = 3 * U; g.globalAlpha = 0.6;
+  if (HL) {
+    for (let l = 0; l < LANES; l++) { g.beginPath(); g.arc(laneX(l), judgeY, ST * 0.58, 0, Math.PI * 2); g.stroke(); }
+    g.globalAlpha = 0.3; g.fillStyle = '#ffd76a';
+    g.font = '800 ' + Math.round(ST * 0.5) + 'px "M PLUS Rounded 1c", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (let l = 0; l < LANES; l++) g.fillText(LANE_MARK[l], laneX(l), judgeY);
+  } else {
+    g.beginPath(); g.arc(cx, judgeY, ST * 0.58, 0, Math.PI * 2); g.stroke();
+  }
+  g.globalAlpha = 1;
+  for (let i = chart.length - 1; i >= 0; i--) {
+    const n = chart[i];
+    const z = n.sec / BEAT - beatNow;
+    const w = WORDS[n.key];
+    const nx = s => HL ? laneX(n.lane, s) : cx;
+    if (n.judge === 'perfect' || n.judge === 'good') {
+      const k = (sec - n.at) / 0.3;
+      if (k >= 0 && k < 1) drawStamp(n.key, nx(1), judgeY, ST * (1 + k * 0.6), 1 - k);
+      continue;
+    }
+    if (z > AHEAD || z < NEAR) continue;
+    const a = (n.judge === 'miss' ? 0.25 : 1) * Math.min(1, (AHEAD - z) / 0.8);
+    const p0 = proj(z), p1 = proj(Math.min(AHEAD, z + n.sound));
+    g.globalAlpha = a * 0.55; g.fillStyle = w.color;
+    g.beginPath();
+    const tw = 9 * U;
+    const x0 = nx(p0.s), x1 = nx(p1.s);
+    g.moveTo(x0 - tw * p0.s, p0.y); g.lineTo(x1 - tw * p1.s, p1.y);
+    g.lineTo(x1 + tw * p1.s, p1.y); g.lineTo(x0 + tw * p0.s, p0.y);
+    g.closePath(); g.fill();
+    g.globalAlpha = 1;
+    const size = ST * p0.s;
+    if (HL) {
+      g.globalAlpha = a * 0.6; g.fillStyle = '#14000a';
+      g.beginPath(); g.arc(x0, p0.y, size * 0.52, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1;
+    }
+    drawStamp(n.key, x0, p0.y, size, a);
+    if (!HL && p0.s > 0.35) {
+      g.globalAlpha = a; g.fillStyle = '#f3ecff';
+      g.font = '800 ' + Math.max(8, Math.round(15 * U * p0.s)) + 'px "M PLUS Rounded 1c", sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+      g.fillText(w.label, cx + size / 2 + 8 * U * p0.s, p0.y);
+      g.globalAlpha = 1;
+    }
+  }
+  shownScore = shownScore < score ? Math.min(score, shownScore + Math.max(2, Math.ceil((score - shownScore) / 6))) : score;
+  const rate = scoreRate(shownScore), tier = tierOf(rate);
+  if (tier !== tierShown) { tierShown = tier; tierAt = sec; }
+  const BS = 44 * U, bx = 8 * U, by = 6 * U;
+  const gx = bx + BS + 6 * U, gy = by + BS * 0.3, gh = BS * 0.4, gw = Math.max(40, W - gx - 64);
+  g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(gx, gy, gw, gh);
+  const gg = g.createLinearGradient(gx, 0, gx + gw, 0);
+  gg.addColorStop(0, '#9fe8d8'); gg.addColorStop(0.5, '#ffd76a'); gg.addColorStop(1, '#ff7aa8');
+  g.fillStyle = gg; g.fillRect(gx, gy, gw * rate, gh);
+  g.fillStyle = 'rgba(255,122,122,.9)'; g.fillRect(gx + gw * FAIL_RATE - 1, gy - 3 * U, 2, gh + 6 * U);
+  g.fillStyle = '#1b1430'; g.font = '800 ' + Math.round(gh * 0.78) + 'px "M PLUS Rounded 1c", sans-serif';
+  g.textBaseline = 'middle'; g.textAlign = 'left';
+  g.fillText(Math.floor(rate * 100) + '%', gx + 6 * U, gy + gh / 2 + 1);
+  const pop = sec - tierAt < 0.35 ? 1 + 0.5 * Math.sin(Math.PI * (sec - tierAt) / 0.35) : 1;
+  const bim = bearImgs[tierShown];
+  if (bim.complete) { g.imageSmoothingEnabled = false; g.drawImage(bim, bx + BS / 2 - BS * pop / 2, by + BS / 2 - BS * pop / 2, BS * pop, BS * pop); }
+  g.fillStyle = '#f3ecff'; g.textBaseline = 'top'; g.textAlign = 'right';
+  g.font = '800 ' + Math.round(16 * U) + 'px "M PLUS Rounded 1c", sans-serif';
+  g.fillText(combo > 1 ? combo + ' コンボ' : '', W - 14 * U, by + BS + 4 * U);
+  if (beatNow >= 0 && beatNow < COUNT_IN * BAR) {
+    g.fillStyle = '#ffd76a'; g.font = '800 ' + Math.round(72 * U) + 'px "M PLUS Rounded 1c", sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(String(COUNT_IN * BAR - Math.floor(beatNow)), cx, H * 0.4);
+  }
+  drawBursts(sec, cx, judgeY);
+  drawShards(sec, cx, judgeY);
+  if (flash && sec - flash.at < 0.45) {
+    const k = (sec - flash.at) / 0.45;
+    g.globalAlpha = 1 - k; g.fillStyle = flash.color;
+    g.font = '800 ' + Math.round(28 * U) + 'px "M PLUS Rounded 1c", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(flash.text, cx, judgeY - ST * 0.75 - k * 10 * U);
+    g.globalAlpha = 1;
+  }
+  const cur = chart.find(n => !n.judge) || chart[chart.length - 1];
+  const line = chart.filter(n => n.bar === cur.bar);
+  g.font = '800 ' + Math.round(15 * U) + 'px "M PLUS Rounded 1c", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'left';
+  const parts = line.map(n => WORDS[n.key].label);
+  const total = g.measureText(parts.join(' ')).width;
+  let x = cx - total / 2;
+  line.forEach((n, i) => {
+    g.fillStyle = n.judge === 'perfect' || n.judge === 'good' ? '#ffd76a' : n.judge === 'miss' ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.75)';
+    g.fillText(parts[i], x, H - 48 * U);
+    x += g.measureText(parts[i] + ' ').width;
+  });
+}
+function loop() {
+  const sec = playing ? nowSec() : (FREEZE !== null ? FREEZE : -1);
+  if (playing && !paused) {
+    if (AUTO) {
+      for (const n of chart) {
+        if (n.judge) continue;
+        if (n.sec > sec) break;
+        judgeTap(n.sec, n.lane); playVoice(n.key);
+      }
+    }
+    sweepMisses(sec);
+    if (isFailed() || sec > (SONG_BARS * BAR) * BEAT) finish();
+  }
+  draw(sec);
+  requestAnimationFrame(loop);
+}
+cv.addEventListener('pointerdown', e => { e.preventDefault(); onTap(isHell() ? laneAt(e.clientX) : undefined); });
+window.addEventListener('keydown', e => {
+  if (e.repeat || !playing) return;
+  e.preventDefault();
+  if (e.key === 'Escape') { paused ? resumeGame() : pauseGame(); return; }
+  onTap(LANE_KEYS[e.key]);
+});
+function setHell(on) {
+  hell = on && hellUnlocked();
+  try { localStorage.setItem('kuma_hell', hell ? '1' : '0'); } catch (e) {}
+  const b = document.getElementById('btnHell');
+  b.textContent = 'ヘルモード ' + (hell ? 'ON' : 'OFF'); b.classList.toggle('on', hell);
+  document.getElementById('hellRow').classList.toggle('show', hellUnlocked());
+  document.getElementById('title').classList.toggle('hell', hell);
+  SONGS.forEach(s => showBest(s.id));
+}
+function refreshHell() { setHell(hell); }
+document.getElementById('btnHell').addEventListener('click', () => setHell(!hell));
+if (HELL_TEST) {
+  document.getElementById('hellTest').style.display = '';
+  document.getElementById('hellTest').addEventListener('click', () => {
+    if (!confirm('記録を最初の状態（メンシのうた（ショート）以外エンジェルスン）に戻しますか？')) return;
+    bests = testStartBests(); storeBests(); setHell(false);
+  });
+}
+document.getElementById('btnPause').addEventListener('click', pauseGame);
+document.getElementById('btnResume').addEventListener('click', resumeGame);
+document.getElementById('btnRestart').addEventListener('click', () => { paused = false; ac.resume(); start(); });
+document.getElementById('btnQuit').addEventListener('click', quitGame);
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
+function showOffset() { document.getElementById('offVal').textContent = (offsetMs > 0 ? '+' : '') + offsetMs + ' ミリ秒'; }
+function bumpOffset(d) {
+  offsetMs = Math.max(-300, Math.min(300, offsetMs + d));
+  try { localStorage.setItem('menshi_offset2', String(offsetMs)); } catch (e) {}
+  showOffset();
+}
+document.getElementById('offMinus').addEventListener('click', () => bumpOffset(-10));
+document.getElementById('offPlus').addEventListener('click', () => bumpOffset(10));
+let bests = {};
+try {
+  const raw = localStorage.getItem(bestStoreKey());
+  const v = raw === null && HELL_TEST ? testStartBests() : JSON.parse(raw || '{}');
+  for (const k in v) if (v[k] >= 0 && v[k] <= 1) bests[k] = v[k];
+} catch (e) {}
+function storeBests() { try { localStorage.setItem(bestStoreKey(), JSON.stringify(bests)); } catch (e) {} }
+function saveBest(id, rate) {
+  if (bests[id] !== undefined && rate <= bests[id]) return false;
+  bests[id] = rate; storeBests(); showBest(id);
+  return true;
+}
+function bestKey(id) { return hell ? id + ':hell' : id; }
+function showBest(id) {
+  id = id.replace(/:hell$/, '');
+  const row = document.querySelector('#songBtns .srow[data-id="' + id + '"]');
+  if (!row) return;
+  const r = bests[bestKey(id)], ic = row.querySelector('.ic');
+  ic.style.visibility = r === undefined ? 'hidden' : '';
+  if (r !== undefined) ic.src = 'img/bear' + (tierOf(r) + 1) + '.png';
+  row.querySelector('.best').textContent = r === undefined ? '' : Math.floor(r * 100) + '%';
+  row.querySelector('.reset').style.visibility = r === undefined ? 'hidden' : '';
+}
+const LIST = SONGS;
+for (const s of LIST) {
+  const row = document.createElement('div'); row.className = 'srow'; row.dataset.id = s.id;
+  const b = document.createElement('button'); b.className = 'play'; b.dataset.id = s.id;
+  const ic = document.createElement('img'); ic.className = 'px ic'; ic.alt = '';
+  const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = s.name;
+  const best = document.createElement('span'); best.className = 'best';
+  b.append(ic, nm, best);
+  b.addEventListener('click', () => { practice = null; calib = false; setSong(s); nm.textContent = '読みこみ中…'; Promise.all([loading, loadMusic(s)]).then(() => { nm.textContent = s.name; fitText(nm); start(); }); });
+  const rs = document.createElement('button'); rs.className = 'reset'; rs.textContent = 'Reset';
+  rs.addEventListener('click', () => {
+    if (!confirm('「' + s.name + '」' + (hell ? '（ヘル）' : '') + 'の記録を消しますか？')) return;
+    delete bests[bestKey(s.id)]; storeBests(); showBest(s.id);
+    refreshHell();
+  });
+  row.append(b, rs);
+  document.getElementById('songBtns').appendChild(row);
+  showBest(s.id);
+}
+function fitText(b) {
+  b.style.fontSize = '';
+  let px = parseFloat(getComputedStyle(b).fontSize);
+  while (b.scrollWidth > b.clientWidth && px > 9) { px -= 0.5; b.style.fontSize = px + 'px'; }
+}
+function fitAll() { document.querySelectorAll('#songBtns .nm').forEach(fitText); }
+setHell(hell);
+fitAll();
+window.addEventListener('resize', fitAll);
+document.getElementById('btnRetry').addEventListener('click', start);
+document.getElementById('btnSuggest').addEventListener('click', e => {
+  const v = parseInt(e.currentTarget.dataset.v, 10);
+  bumpOffset(v - offsetMs);
+  e.currentTarget.textContent = 'ずれ補正を ' + (v > 0 ? '+' : '') + v + ' にしました';
+});
+document.getElementById('btnFull').addEventListener('click', () => { practice = null; calib = false; setSong(song); start(); });
+document.getElementById('btnTitle').addEventListener('click', () => {
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('title').classList.add('show');
+});
+document.getElementById('btnCalib').addEventListener('click', () => { practice = 'ekkuma'; calib = true; const s = SONGS.find(x => x.id === 'menshi'); setSong(s, CALIB_BARS); Promise.all([loading, loadMusic(s)]).then(start); });
+showOffset();
+if (FREEZE !== null) { document.getElementById('title').classList.remove('show'); playing = false; }
+function today() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function showHowto(on) { document.getElementById('howtoBox').classList.toggle('show', on); }
+document.getElementById('btnHowto').addEventListener('click', () => showHowto(true));
+document.getElementById('btnHowtoOk').addEventListener('click', () => showHowto(false));
+document.getElementById('howtoBox').addEventListener('click', e => { if (e.target.id === 'howtoBox') showHowto(false); });
+try {
+  if (FREEZE === null && localStorage.getItem('kuma_howto_day') !== today()) { showHowto(true); localStorage.setItem('kuma_howto_day', today()); }
+} catch (e) {}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
