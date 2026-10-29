@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<base href="/kuma-rhythm/">
+<title>譜面録り（クマリズム テスト）</title>
+<style>
+  :root { --bg: #1b1430; --card: #2a1f48; --fg: #f4eefc; --sub: #b9add6; --acc: #ffd76a; --hit: #ff7aa8; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", sans-serif; }
+  body { padding: 12px 16px 24px; max-width: 520px; margin: 0 auto; -webkit-user-select: none; user-select: none; }
+  h1 { font-size: 20px; margin: 4px 0 8px; color: var(--acc); }
+  p.note { font-size: 13px; color: var(--sub); margin: 4px 0 10px; line-height: 1.5; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+  select, button { font: inherit; font-size: 16px; border-radius: 12px; border: 0; padding: 8px 14px; }
+  select { flex: 1 1 auto; min-width: 0; background: #fff; color: #1b1430; }
+  button { background: var(--acc); color: #1b1430; font-weight: 800; box-shadow: 0 3px 0 #b8902a; cursor: pointer; }
+  button.sub { background: #4a3d70; color: var(--fg); box-shadow: 0 3px 0 #2c2348; font-weight: 600; }
+  button:disabled { opacity: .4; }
+  #pad { margin: 12px 0; height: 38vh; min-height: 200px; border-radius: 18px; background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; touch-action: none; position: relative; overflow: hidden; }
+  #pad.flash { background: #4b2f63; }
+  #big { font-size: 56px; font-weight: 800; color: var(--acc); line-height: 1; }
+  #info { font-size: 15px; color: var(--sub); }
+  #beats { display: flex; gap: 6px; }
+  #beats i { width: 14px; height: 14px; border-radius: 50%; background: #4a3d70; display: block; }
+  #beats i.on { background: var(--acc); }
+  #grid { font-family: ui-monospace, Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre; overflow-x: auto; background: #120d22; border-radius: 12px; padding: 8px 10px; max-height: 40vh; overflow-y: auto; }
+  #grid .x { color: var(--hit); font-weight: 800; }
+  #grid .w { color: var(--fg); }
+  #grid .n { color: #6f6593; }
+  #copied { font-size: 13px; color: var(--acc); }
+</style>
+</head>
+<body>
+<h1>譜面録り</h1>
+<p class="note">曲に合わせて、スタンプを置きたい所で下の四角を叩く（PC はどのキーでも）。最初の4つはカウント。叩いた所は半拍の格子にそろえて、間の長さで言葉を当てはめる。ずれ補正はゲームと同じ値を使う。</p>
+<div class="row"><select id="sel"></select></div>
+<div class="row">
+  <button id="btnRec">録る</button>
+  <button id="btnStop" class="sub" disabled>やめる</button>
+  <button id="btnPlay" class="sub" disabled>この譜面で聞く</button>
+  <button id="btnCopy" class="sub" disabled>譜面をコピー</button>
+  <span id="copied"></span>
+</div>
+<div id="pad"><div id="big">・</div><div id="beats"><i></i><i></i><i></i><i></i></div><div id="info">曲を選んで「録る」</div></div>
+<div id="grid"></div>
+<script>
+const ac = new (window.AudioContext || window.webkitAudioContext)();
+const OFFSET_BASE_MS = -40;
+let offsetMs = 0;
+try { offsetMs = parseInt(localStorage.getItem('menshi_offset2') || '0', 10) || 0; } catch (e) {}
+const VOICE_BPMS = [60, 80, 100, 120, 140];
+function voiceBpmFor(b) { return VOICE_BPMS.reduce((a, c) => Math.abs(c - b) < Math.abs(a - b) ? c : a); }
+const KEYS = { 'エックマ': 'ekkuma', 'かっはぁ': 'kahha', 'ちゅぱ': 'chupa', 'テャマスィー': 'tyamasu', 'しまおぱぱいぽい': 'shimao', 'ほにゅうだん': 'honyu', 'とれだか': 'toreda', 'プリンペラン': 'purin', '健全': 'kenzen' };
+const LEN = { ekkuma: 1, kahha: 1, chupa: 0.5, tyamasu: 1, shimao: 2, honyu: 2, toreda: 1, purin: 2, kenzen: 1 };
+const ONE = ['エックマ', 'かっはぁ', 'テャマスィー', 'とれだか'], TWO = ['しまおぱぱいぽい', 'ほにゅうだん', 'プリンペラン'];
+let SONGS = [], song = null, BEAT = 0.6, LINES = 0;
+const bufs = {}, voiceSets = {};
+function load(url) { return fetch(url).then(r => r.arrayBuffer()).then(b => new Promise((ok, ng) => ac.decodeAudioData(b, ok, ng))); }
+function loadVoices(vb) {
+  if (voiceSets[vb]) return voiceSets[vb].p;
+  const set = { b: {} }; voiceSets[vb] = set;
+  const dir = vb === 100 ? 'voice/' : 'voice/' + vb + '/';
+  set.p = Promise.all(Object.values(KEYS).map(k => load(dir + k + '.wav').then(b => { set.b[k] = b; }).catch(() => {})));
+  return set.p;
+}
+function loadSong(s) { if (!bufs[s.src]) bufs[s.src] = load(s.src); return Promise.all([bufs[s.src], loadVoices(voiceBpmFor(s.voiceBpm || s.bpm || 100))]); }
+const $ = id => document.getElementById(id);
+const sel = $('sel');
+fetch('/kuma-rhythm-test/index.html?' + Date.now()).then(r => r.text()).then(t => {
+  const a = t.indexOf('const LYRICS'), b = t.indexOf('const COUNT_IN');
+  SONGS = new Function(t.slice(a, b) + '; return SONGS;')();
+  const order = SONGS.filter(s => s.testOnly).concat(SONGS.filter(s => !s.testOnly));
+  order.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.name + '（テンポ' + (s.bpm || 100) + '・' + s.lyrics.length + '行）'; sel.appendChild(o); });
+  try { const last = localStorage.getItem('kuma_rec_song'); if (last && SONGS.some(s => s.id === last)) sel.value = last; } catch (e) {}
+  pick();
+});
+sel.addEventListener('change', pick);
+let taps = [], chart = null;
+function pick() {
+  song = SONGS.find(s => s.id === sel.value); if (!song) return;
+  BEAT = 60 / (song.bpm || 100); LINES = song.lyrics.length;
+  try { localStorage.setItem('kuma_rec_song', song.id); } catch (e) {}
+  taps = []; chart = null;
+  try { const v = localStorage.getItem('kuma_rec_' + song.id); if (v) { taps = JSON.parse(v); build(); } } catch (e) {}
+  render();
+  $('info').textContent = song.name + '：読みこみ中…';
+  loadSong(song).then(() => { if (!running) $('info').textContent = song.name + '：「録る」で始まる（' + LINES + '行・約' + Math.round((LINES + 2) * 4 * BEAT) + '秒）'; });
+}
+let running = false, mode = '', t0 = 0, src = null, raf = 0, vsrc = null, timers = [];
+function lat() { return ac.outputLatency || ac.baseLatency || 0; }
+function now() { return ac.currentTime - t0 - lat() - (OFFSET_BASE_MS + offsetMs) / 1000; }
+function click(t, hi) { const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = hi ? 1760 : 1320; g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.08); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.1); }
+function startMusic() {
+  ac.resume();
+  t0 = ac.currentTime + 0.4;
+  return bufs[song.src].then(buf => {
+    const me = ac.createBufferSource(); src = me; me.buffer = buf; me.connect(ac.destination); me.start(t0, song.at);
+    for (let i = 0; i < 4; i++) click(t0 + i * BEAT, i === 0);
+    me.onended = () => { if (running && src === me) stop(); };
+  });
+}
+function begin(m) {
+  if (running || !song) return;
+  loadSong(song).then(() => {
+    running = true; mode = m;
+    if (m === 'rec') taps = [];
+    $('btnRec').disabled = $('btnPlay').disabled = $('btnCopy').disabled = true; $('btnStop').disabled = false; sel.disabled = true;
+    startMusic().then(() => { if (m === 'play') schedule(); loop(); });
+  });
+}
+function stop() {
+  running = false; cancelAnimationFrame(raf);
+  try { src && src.stop(); } catch (e) {}
+  planned.forEach(s => { try { s.stop(); } catch (e) {} }); planned = [];
+  try { vsrc && vsrc.stop(); } catch (e) {}
+  if (mode === 'rec') { try { localStorage.setItem('kuma_rec_' + song.id, JSON.stringify(taps)); } catch (e) {} build(); }
+  $('btnRec').disabled = false; $('btnStop').disabled = true; sel.disabled = false;
+  $('btnPlay').disabled = $('btnCopy').disabled = !chart;
+  $('big').textContent = '・'; $('info').textContent = mode === 'rec' ? '叩いた数 ' + taps.length + '。「この譜面で聞く」で確かめられる' : '聞き終わり';
+  render();
+}
+function loop() {
+  const s = now(), b = s / BEAT;
+  const line = Math.floor(b / 4) - 1;
+  const dots = $('beats').children;
+  for (let i = 0; i < 4; i++) dots[i].className = (b >= 0 && Math.floor(b) % 4 === i) ? 'on' : '';
+  if (b < 4) $('big').textContent = b < 0 ? '・' : String(4 - Math.floor(b));
+  else $('big').textContent = line < LINES ? (line + 1) + '行目' : '締め';
+  $('info').textContent = mode === 'rec' ? '叩いた数 ' + taps.length : '聞いている';
+  if (line >= LINES + 1) { stop(); return; }
+  raf = requestAnimationFrame(loop);
+}
+function tap() {
+  if (!running || mode !== 'rec') return;
+  const s = now();
+  if (s < 4 * BEAT - 0.15) return;
+  taps.push(Math.round(s * 1000) / 1000);
+  const p = $('pad'); p.classList.add('flash'); setTimeout(() => p.classList.remove('flash'), 70);
+  beep();
+}
+function beep() { const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = 2000; g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.04); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.05); }
+function playVoice(k) {
+  const vt = song.voiceBpm || song.bpm || 100, vb = voiceBpmFor(vt), set = voiceSets[vb];
+  const buf = set && set.b[k]; if (!buf) return;
+  try { vsrc && vsrc.stop(); } catch (e) {}
+  vsrc = ac.createBufferSource(); vsrc.buffer = buf; vsrc.playbackRate.value = vt / vb; vsrc.connect(ac.destination); vsrc.start();
+}
+function build() {
+  const H = BEAT / 2, cells = Array.from({ length: LINES }, () => new Set());
+  taps.forEach(s => { const k = Math.round(s / H) - 8; if (k >= 0 && k < LINES * 8) cells[Math.floor(k / 8)].add(k % 8); });
+  let i1 = 0, i2 = 0;
+  chart = cells.map(c => {
+    const st = [...c].sort((a, b) => a - b);
+    let line = '・'.repeat(st.length ? st[0] : 0);
+    st.forEach((a, q) => {
+      const gap = (q + 1 < st.length ? st[q + 1] : 8) - a;
+      if (gap === 1) line += 'ちゅぱ';
+      else if (gap <= 3 || a % 2 === 1) { line += ONE[i1++ % 4] + '・'.repeat(gap - 2); }
+      else { line += TWO[i2++ % 3] + '・'.repeat(gap - 4); }
+    });
+    return { st, text: line.replace(/・+$/, '') };
+  });
+}
+function render() {
+  const g = $('grid'); g.textContent = '';
+  if (!chart) { g.textContent = song ? 'まだ録っていない' : ''; return; }
+  chart.forEach((c, i) => {
+    const d = document.createElement('div');
+    const m = document.createElement('span'); m.className = 'n'; m.textContent = String(i + 1).padStart(2, ' ') + ' ';
+    d.appendChild(m);
+    for (let k = 0; k < 8; k++) { const s = document.createElement('span'); s.className = c.st.includes(k) ? 'x' : 'n'; s.textContent = c.st.includes(k) ? '●' : (k % 2 ? '･' : '|'); d.appendChild(s); }
+    const w = document.createElement('span'); w.className = 'w'; w.textContent = '  ' + c.text; d.appendChild(w);
+    g.appendChild(d);
+  });
+  $('btnPlay').disabled = $('btnCopy').disabled = running;
+}
+let planned = [];
+function schedule() {
+  const READ = Object.keys(KEYS).concat(['・']).sort((a, b) => b.length - a.length);
+  const list = [];
+  chart.forEach((c, i) => {
+    let b = (i + 1) * 4, r = c.text;
+    while (r.length) {
+      const h = READ.find(x => r.startsWith(x)); if (!h) break;
+      if (h === '・') b += 0.5; else { list.push([t0 + b * BEAT, KEYS[h]]); b += LEN[KEYS[h]]; }
+      r = r.slice(h.length);
+    }
+  });
+  const vt = song.voiceBpm || song.bpm || 100, vb = voiceBpmFor(vt), set = voiceSets[vb];
+  planned = list.map(([when, k], j) => {
+    const s = ac.createBufferSource(); s.buffer = set.b[k]; s.playbackRate.value = vt / vb; s.connect(ac.destination);
+    s.start(when); if (j + 1 < list.length) s.stop(list[j + 1][0]);
+    return s;
+  });
+}
+$('btnRec').addEventListener('click', () => begin('rec'));
+$('btnPlay').addEventListener('click', () => begin('play'));
+$('btnStop').addEventListener('click', stop);
+$('btnCopy').addEventListener('click', () => {
+  const txt = '【' + song.id + ' ' + song.name + '】\n' + chart.map(c => "    '" + c.text + "',").join('\n').replace(/,$/, '');
+  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => { $('copied').textContent = 'コピーした'; }, () => { prompt('これをコピー', txt); });
+  setTimeout(() => { $('copied').textContent = ''; }, 2000);
+});
+const pad = $('pad');
+pad.addEventListener('pointerdown', e => { e.preventDefault(); tap(); });
+document.addEventListener('keydown', e => { if (e.repeat || e.target.tagName === 'SELECT') return; if (running && mode === 'rec') { e.preventDefault(); tap(); } });
+</script>
+</body>
+</html>
